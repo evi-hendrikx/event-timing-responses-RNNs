@@ -48,3 +48,5 @@ This work is licensed under a
 
 ## Contact
 For questions or comments reach out to Evi Hendrikx: e.h.h.hendrikx [at] gmail [dot] com
+To cite this code base:
+Hendrikx, E., Manns, D., van der Stoep, N., Testolin, A., Zorzi, M., Harvey, B.M. (2025) event-timing-responses-RNNs.
