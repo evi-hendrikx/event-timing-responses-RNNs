@@ -50,4 +50,4 @@ This work is licensed under a
 For questions or comments reach out to Evi Hendrikx: e.h.h.hendrikx [at] gmail [dot] com
 
 To cite this code base:
-Hendrikx, E., Manns, D., van der Stoep, N., Testolin, A., Zorzi, M., Harvey, B.M. (2025) event-timing-responses-RNNs.
+Hendrikx, E., Manns, D., van der Stoep, N., Testolin, A., Zorzi, M., Harvey, B.M. (2025) event-timing-responses-RNNs. https://doi.org/10.5281/zenodo.14995621
