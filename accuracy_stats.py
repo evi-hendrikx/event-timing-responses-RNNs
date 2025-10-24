@@ -198,7 +198,7 @@ def compare_accuracy_model_depths(results_dir, all_repetitions, condition_list =
         stats[accuracy_type]["anova"] = {}
         stats[accuracy_type]["variance"] = {}
 
-        if not any(condition_list) or all(el=='16nodes' for el in condition_list):
+        if (not any(condition_list) or all(el=='16nodes' for el in condition_list)) and len(condition_list) > 1:
             eval_string = "kruskal(" 
             for key in list(accuracies.keys()):
                 eval_string = eval_string + "accuracies['" + key + "'],"
@@ -250,7 +250,8 @@ def compare_accuracy_model_depths(results_dir, all_repetitions, condition_list =
             stats[accuracy_type]["post_hoc"] = eval(eval_string)
             print(accuracy_type,':', stats[accuracy_type]["post_hoc"])
             
-            
+        elif len(condition_list) == 1:
+            pass
             
         # comparisons with control conditions are paired with its "regular indRNN" version
         # I'm not doing anything else than top 50 here, so data are still paired
@@ -318,6 +319,8 @@ def compare_accuracy_model_depths(results_dir, all_repetitions, condition_list =
         x_values_violins = [-0.32, -0.16, 0, 0.16, 0.32]
     elif len(event_accuracies_per_depth) == 4:
         x_values_violins = [-0.3, -0.1, 0.1, 0.3]
+    elif len(event_accuracies_per_depth) == 1:
+        x_values_violins = [0]
 
     previous_x_value = x_values_summary_stats[0]
     layer_id = 0
@@ -450,7 +453,7 @@ def compare_variance_accuracy_maps(results_dir, all_repetitions, assessed_per="e
         sc_acc.append(sc_values)
 
   
-    if "special_condition" not in condition_list:
+    if "special_condition" not in condition_list and len(condition_list) > 1:
         eval_string = "kruskal(" 
         for var_list in var_acc:
             eval_string = eval_string + str(var_list) + ","
