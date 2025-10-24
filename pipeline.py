@@ -54,7 +54,7 @@ def train_net(net, dataloader, optimizer, scheduler, loss_fn, num_epochs, net_pa
     for epoch_count in tqdm(range(num_epochs)):
         batch_losses = []
 
-        for batch_movies, batch_targets, batch_labels, batch_events in dataloader:
+        for batch_movies, batch_targets, _, _ in dataloader:
 
             # movies straightened out now 
             # not a problem now, might be problematic if we want to use spatial location
@@ -242,7 +242,7 @@ def evaluate_net(results_dir, repetitions, assessed_per="event",x0="duration",y0
         else:
             w_c = repetitions['weight_constraint']
             
-        if control_condition == "no_recurrency":
+        if control_condition == "no_recurrency" or c.NET_CLASS == NNetwork:
             c.NET_CLASS = NNetwork
             c.NET_TYPE = "NN"
         else:
@@ -303,7 +303,7 @@ def evaluate_net(results_dir, repetitions, assessed_per="event",x0="duration",y0
         else:
             w_c = repetitions['weight_constraint']
             
-        if control_condition == "no_recurrency":
+        if control_condition == "no_recurrency" or c.NET_CLASS == NNetwork:
             c.NET_CLASS = NNetwork
             c.NET_TYPE = "NN"
         else:
@@ -507,7 +507,7 @@ def plot_loss_functions_all_depths(results_dir, all_repetitions, control_conditi
         else:
             all_losses.append([])
             
-     if not any(control_condition_list) or all(np.asarray(control_condition_list) == "16nodes"):         
+     if (not any(control_condition_list) or all(np.asarray(control_condition_list) == "16nodes")) and len(control_condition_list) > 1:         
          eval_string = "kruskal(" 
          for depth_id,repetitions in enumerate(all_repetitions):
             list_losses = [all_losses[depth_id][rep_id][-1] for rep_id,_ in enumerate(repetitions)]
@@ -528,6 +528,8 @@ def plot_loss_functions_all_depths(results_dir, all_repetitions, control_conditi
         
          stats["post_hoc"] = eval(eval_string)
          print(stats["post_hoc"])
+     elif len(control_condition_list) == 1:
+         pass
      else:
          stats["MannWU"] = {}
          stats["Wilcoxon"] = {}

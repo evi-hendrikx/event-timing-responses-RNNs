@@ -297,7 +297,7 @@ class NNetwork(nn.Module):
     Neural network without recurrency
     '''
 
-    def __init__(self, input_size, hidden_size, num_layers, nonlinearity, bias, batch_first, dropout, norm, ind_rnn=False, weight_constraint=None):
+    def __init__(self, input_size, hidden_size, num_layers, nonlinearity, bias, batch_first, dropout, norm, *nargs, **kwargs):
         super().__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size

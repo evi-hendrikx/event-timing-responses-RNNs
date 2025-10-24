@@ -38,8 +38,7 @@ def run_model(args):
         
     # setup directory for this experimental configuration
     exp_dir, sub_results_dir = get_result_dirs(c.RESULTS_DIR, args)
-    net_path, test_results_path, event_response_path, movie_response_path, response_labels_path, mon_fits_path, tun_fits_path, state_change_response_path = get_result_paths(
-        c.RESULTS_DIR, args)
+    net_path, _, _, _, _, _, _, _ = get_result_paths(c.RESULTS_DIR, args)
     print(net_path)
     dir_list = [exp_dir, sub_results_dir]
     for d in dir_list:
@@ -170,18 +169,18 @@ if __name__ == "__main__":
     # (so more layers becomes less nodes per layer)
     # (eventually these were also used for the layer-size-matched by simply
     # setting the num_hidden to 16)
-    for layers in [1,2,3,4,5]:
+    for layers in [5,2]:#[1,2,3,4,5]:
         ind_rnn_bool = True
         if layers == 1:
             num_hidden = 77 #16
         elif layers == 2:
-            num_hidden = 16 #16
+            num_hidden = 8 #16 #16
         elif layers == 3:
             num_hidden = 12 #16
         elif layers ==4:
             num_hidden = 9 #16
         elif layers == 5:
-            num_hidden = 8 #16
+            num_hidden = 64 #16 #8
         
         repetitions = []
         for ii in range(50):
@@ -277,7 +276,7 @@ if __name__ == "__main__":
     do_mono_tuned_fit_evaluations(results_dir,repetitions_all_depths,control_condition_list=condition_list,threshold =0.8,x0=["duration","ISI"],y0=["period","period"])
 
     # look at the parameters
-    compare_maps_tuned_predictions(results_dir,repetitions_all_depths,assessed_per="event",x0=["duration","ISI"],y0=["period","period"],control_condition_list=condition_list, threshold = 0.2,timing_types_separate=False,parameters_type = ["mono"])
+    compare_maps_tuned_predictions(results_dir,repetitions_all_depths,assessed_per="event",x0=["duration","ISI"],y0=["period","period"],control_condition_list=condition_list, threshold = 0.2,parameters_type = ["mono","tuned"])
 
-    # look what happens without tuned nodes
-    switch_off_nodes_last_layer(results_dir,repetitions_all_depths)
+    # # look what happens without tuned nodes
+    # switch_off_nodes_last_layer(results_dir,repetitions_all_depths)

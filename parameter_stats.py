@@ -354,7 +354,7 @@ def data_stats(data, first_vs_last = True,variable='distances',parameters_type=[
 
 
 
-def compare_maps_tuned_predictions(results_dir,all_repetitions,assessed_per="event",x0=["duration","ISI"],y0=["period","period"],control_condition_list=[[None]], threshold = 0.2,timing_types_separate= True,parameters_type = ["tuned","mixed","mono"]):
+def compare_maps_tuned_predictions(results_dir,all_repetitions,assessed_per="event",x0=["duration","ISI"],y0=["period","period"],control_condition_list=[[None]], threshold = 0.2,parameters_type = ["tuned","mixed","mono"]):
     """
     Load in data about model parameters and run stats on them
     """
