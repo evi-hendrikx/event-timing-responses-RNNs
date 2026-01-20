@@ -79,7 +79,7 @@ def run_model(args):
         
         # eventually decided against exponential learning rate --> set it to 1
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, 1)
-        checkpoint = torch.load(net_path, map_location=c.DEVICE)
+        checkpoint = torch.load(net_path, map_location=c.DEVICE, weights_only=False)
         net.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
@@ -169,18 +169,18 @@ if __name__ == "__main__":
     # (so more layers becomes less nodes per layer)
     # (eventually these were also used for the layer-size-matched by simply
     # setting the num_hidden to 16)
-    for layers in [5,2]:#[1,2,3,4,5]:
+    for layers in [1,2,3,4,5]:
         ind_rnn_bool = True
         if layers == 1:
             num_hidden = 77 #16
         elif layers == 2:
-            num_hidden = 8 #16 #16
+            num_hidden = 16 #16 #8 #64
         elif layers == 3:
             num_hidden = 12 #16
         elif layers ==4:
             num_hidden = 9 #16
         elif layers == 5:
-            num_hidden = 64 #16 #8
+            num_hidden = 64 #16 #8 #64
         
         repetitions = []
         for ii in range(50):
