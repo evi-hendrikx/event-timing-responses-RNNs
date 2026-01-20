@@ -117,7 +117,7 @@ def compute_variance_explained(function_type, node_activity, response_labels, pa
 
 
     
-def fit_responses(responses, response_labels, function_type, outcomes_file=[], cross_v = True,x0="duration",y0="period",save = True):
+def fit_responses(responses, response_labels, function_type, outcomes_file=None, cross_v = True,x0="duration",y0="period",save = True):
     """
     Fits response functions to the responses of the nodes
 
@@ -206,7 +206,7 @@ def fit_responses(responses, response_labels, function_type, outcomes_file=[], c
                         # smallest stepsize is 1e-10, then accept these parameters
                         if round(ftol,15) == round(1e-14,15):
                             # plot findings
-                            if node_id % 20 == 0:
+                            if node_id % 200 == 0:
                                 pred_activity = function_to_fit(response_labels, *node_fit[0])
                                 compare_actual_pred = np.stack((node_activity[None,...,None], pred_activity[None,...,None]),axis=2)
                                 plot_response_heatmaps(compare_actual_pred, response_labels.T, 0,x0 =x0,y0 =y0,normalize_per_plot=False)
