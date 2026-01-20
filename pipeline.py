@@ -13,11 +13,9 @@ import pickle
 from utility import get_avg_res, get_timing_responses,save_stats
 import config_file as c
 from tqdm import tqdm
-import shutil
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-import scipy
 from create_special_conditions import evaluate_special_conditions
 from network_models_new import RNNetwork, NNetwork
 
@@ -250,7 +248,7 @@ def evaluate_net(results_dir, repetitions, assessed_per="event",x0="duration",y0
             c.NET_TYPE = "RNN"
             
         net = c.NET_CLASS(c.INPUT_SIZE, repetitions["num_hidden"], repetitions["num_layers"], c.NONLINEARITY, c.BIAS, c.BATCH_FIRST, repetitions["dropout_prob"], repetitions["norm"], repetitions["ind_rnn"], w_c)
-        checkpoint = torch.load(net_path, map_location=torch.device(c.DEVICE))
+        checkpoint = torch.load(net_path, map_location=c.DEVICE, weights_only=False)
         net.load_state_dict(checkpoint['model_state_dict'])
         if control_condition =="init":
             train_losses = []
@@ -311,7 +309,7 @@ def evaluate_net(results_dir, repetitions, assessed_per="event",x0="duration",y0
             c.NET_TYPE = "RNN"
             
         net = c.NET_CLASS(c.INPUT_SIZE, repetitions["num_hidden"], repetitions["num_layers"], c.NONLINEARITY, c.BIAS, c.BATCH_FIRST, repetitions["dropout_prob"], repetitions["norm"], repetitions["ind_rnn"], w_c)
-        checkpoint = torch.load(net_path, map_location=torch.device(c.DEVICE))
+        checkpoint = torch.load(net_path, map_location=c.DEVICE, weights_only=False)
         net.load_state_dict(checkpoint['model_state_dict'])
         if control_condition =="init":
             train_losses = []
@@ -475,7 +473,7 @@ def plot_loss_functions_all_depths(results_dir, all_repetitions, control_conditi
             
             _, test_results_path, _, _, _, _, _, _ = get_result_paths(results_dir, repetition, control_condition=control_condition)
     
-            
+            print(repetition)
             with open(test_results_path, 'rb') as f:
                 # get concatenated losses and fit_labels
                 train_losses, _, _, _, _, _, _,_, _, _, _, _ = pickle.load(f)
@@ -508,64 +506,64 @@ def plot_loss_functions_all_depths(results_dir, all_repetitions, control_conditi
             all_losses.append([])
             
      if (not any(control_condition_list) or all(np.asarray(control_condition_list) == "16nodes")) and len(control_condition_list) > 1:         
-         eval_string = "kruskal(" 
-         for depth_id,repetitions in enumerate(all_repetitions):
+        eval_string = "kruskal(" 
+        for depth_id,repetitions in enumerate(all_repetitions):
             list_losses = [all_losses[depth_id][rep_id][-1] for rep_id,_ in enumerate(repetitions)]
             stats["shapiro"] = shapiro(list_losses)
             eval_string = eval_string + str(list_losses) + ","
-         eval_string = eval_string[:-1] + ")"
-         stats["kruskal"]= eval(eval_string)
-         print(stats["kruskal"])
-        
-         # post hocs    
-         # event_accuracies
-         # posthoc dunn test, with correction for multiple testing
-         eval_string = "posthoc_dunn([" 
-         for depth_id,repetitions in enumerate(all_repetitions):
+        eval_string = eval_string[:-1] + ")"
+        stats["kruskal"]= eval(eval_string)
+        print(stats["kruskal"])
+    
+        # post hocs    
+        # event_accuracies
+        # posthoc dunn test, with correction for multiple testing
+        eval_string = "posthoc_dunn([" 
+        for depth_id,repetitions in enumerate(all_repetitions):
             list_losses = [all_losses[depth_id][rep_id][-1] for rep_id,_ in enumerate(repetitions)]
             eval_string = eval_string + str(list_losses) + ","
-         eval_string = eval_string[:-1] + "],p_adjust='holm-sidak')"
-        
-         stats["post_hoc"] = eval(eval_string)
-         print(stats["post_hoc"])
+        eval_string = eval_string[:-1] + "],p_adjust='holm-sidak')"
+    
+        stats["post_hoc"] = eval(eval_string)
+        print(stats["post_hoc"])
      elif len(control_condition_list) == 1:
-         pass
+        pass
      else:
-         stats["MannWU"] = {}
-         stats["Wilcoxon"] = {}
-         
-         try:
-             id_5 = np.where(np.array(control_condition_list) == None)[0][0]
-             regular_loss = [all_losses[id_5][rep][-1] for rep in range(len(all_losses[id_5]))]
-             stats["shapiro"]["regular"] = shapiro(regular_loss)
-         except:
-             print('no regular')
+        stats["MannWU"] = {}
+        stats["Wilcoxon"] = {}
         
-         # compare 5 layer network with not recurrent
-         try:
-             id_NN = np.where(np.array(control_condition_list) == "no_recurrency")[0][0]
-             stats["MannWU"]["NN"] = mannwhitneyu(regular_loss,[all_losses[id_NN][rep][-1] for rep in range(len(all_losses[id_NN]))])
-             stats["shapiro"]["NN"] = shapiro([all_losses[id_NN][rep][-1] for rep in range(len(all_losses[id_NN]))])
-             print(stats["MannWU"]["NN"])
-         except:
+        try:
+            id_5 = np.where(np.array(control_condition_list) == None)[0][0]
+            regular_loss = [all_losses[id_5][rep][-1] for rep in range(len(all_losses[id_5]))]
+            stats["shapiro"]["regular"] = shapiro(regular_loss)
+        except:
+            print('no regular')
+    
+        # compare 5 layer network with not recurrent
+        try:
+            id_NN = np.where(np.array(control_condition_list) == "no_recurrency")[0][0]
+            stats["MannWU"]["NN"] = mannwhitneyu(regular_loss,[all_losses[id_NN][rep][-1] for rep in range(len(all_losses[id_NN]))])
+            stats["shapiro"]["NN"] = shapiro([all_losses[id_NN][rep][-1] for rep in range(len(all_losses[id_NN]))])
+            print(stats["MannWU"]["NN"])
+        except:
             print('no no recurrency')
 
-         # compare 5 layer network with 16 nodes per layer
-         try:
-             id_16 = np.where(np.array(control_condition_list) == "16nodes")[0][0]
-             stats["MannWU"]["16nodes"] = mannwhitneyu(regular_loss,[all_losses[id_16][rep][-1] for rep in range(len(all_losses[id_16]))])
-             stats["shapiro"]["16nodes"] = shapiro([all_losses[id_16][rep][-1] for rep in range(len(all_losses[id_16]))])
-             print(stats["MannWU"]["16nodes"])
-         except:
-             print('no 16 nodes')
-         
-         # compare 5 layer network with network trained on shuffled data
-         try:
-             id_shuffled = np.where(np.array(control_condition_list) == "shuffled")[0][0]
-             stats["Wilcoxon"]["shuffled"] = wilcoxon(regular_loss,[all_losses[id_shuffled][rep][-1] for rep in range(len(all_losses[id_shuffled]))])
-             stats["shapiro"]["shuffled_diff"] = shapiro(np.array(regular_loss) - np.array([all_losses[id_shuffled][rep][-1] for rep in range(len(all_losses[id_shuffled]))]))
-             print(stats["Wilcoxon"]["shuffled"])
-         except:
+        # compare 5 layer network with 16 nodes per layer
+        try:
+            id_16 = np.where(np.array(control_condition_list) == "16nodes")[0][0]
+            stats["MannWU"]["16nodes"] = mannwhitneyu(regular_loss,[all_losses[id_16][rep][-1] for rep in range(len(all_losses[id_16]))])
+            stats["shapiro"]["16nodes"] = shapiro([all_losses[id_16][rep][-1] for rep in range(len(all_losses[id_16]))])
+            print(stats["MannWU"]["16nodes"])
+        except:
+            print('no 16 nodes')
+        
+        # compare 5 layer network with network trained on shuffled data
+        try:
+            id_shuffled = np.where(np.array(control_condition_list) == "shuffled")[0][0]
+            stats["Wilcoxon"]["shuffled"] = wilcoxon(regular_loss,[all_losses[id_shuffled][rep][-1] for rep in range(len(all_losses[id_shuffled]))])
+            stats["shapiro"]["shuffled_diff"] = shapiro(np.array(regular_loss) - np.array([all_losses[id_shuffled][rep][-1] for rep in range(len(all_losses[id_shuffled]))]))
+            print(stats["Wilcoxon"]["shuffled"])
+        except:
             print('no shuffled')
     
      # save info
