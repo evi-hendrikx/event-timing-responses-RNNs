@@ -347,34 +347,20 @@ def plot_violins(plot_df, stats, hue=None,hue_order = None,y_x_ratio = 1,save_pa
     median = grouped_df[stats['input_args']['dependent_var']].median().to_list()
     Q25 = grouped_df[stats['input_args']['dependent_var']].quantile(.25).to_list()
     Q75 = grouped_df[stats['input_args']['dependent_var']].quantile(.75).to_list()
-    median_info = [str(round(median[idx],2)) + ' [' + str(round(Q25[idx],2)) + ', ' + str(round(Q75[idx],2)) +']' for idx in range(len(median))]
-    
-    x_values_summary_stats = [np.where(np.array(['mono','mixed','tuned']) == plotted_model)[0][0] for plotted_model in grouped_df.mean().index.get_level_values(0)]
-    
-    x_values_5_violins = [-0.32, -0.16, 0, 0.16, 0.32]
-    previous_x_value = x_values_summary_stats[0]
-    layer_id = 0
-    for x_id, x_value in enumerate(x_values_summary_stats):
-        if x_value != previous_x_value:
-            layer_id = 0
-        previous_x_value = x_value
-        x_values_summary_stats[x_id] = x_value + x_values_5_violins[layer_id]
-        layer_id += 1
-    
-  
+    median_info = [str(round(median[idx],2)) + ' [' + str(round(Q25[idx],2)) + ', ' + str(round(Q75[idx],2)) +']' for idx in range(len(median))]            
+        
+    x_values_summary_stats = []
+    for i, v in enumerate(violin.findobj(PolyCollection)):
+        v.set_facecolor('0')
+        verts = v.get_paths()[0].vertices  # get polygon vertices
+        x_mean = verts[:, 0].mean()  # average x of the polygon
+        x_values_summary_stats.append(x_mean)
+
     for p in violin.lines[-3*len(x_values_summary_stats):]:
         p.set_linestyle('-')
         p.set_linewidth(0.5)  # Sets the thickness of the quartile lines
         p.set_color('white')  # Sets the color of the quartile lines
-        p.set_alpha(1)            
-        
-    for i, v in enumerate(violin.findobj(PolyCollection)):
-        if i < layer_id:
-            v.set_facecolor('0.8')
-        elif i < layer_id * 2:
-            v.set_facecolor('0.4')
-        else:
-            v.set_facecolor('0')
+        p.set_alpha(1)  
         
     plt.errorbar(x_values_summary_stats,median, fmt='.',color='white',zorder=4)
     plt.errorbar(x_values_summary_stats,mean,fmt='.',color='red',zorder=4)
@@ -561,16 +547,10 @@ def stats_fits_between_layers(results_dir,repetitions,assessed_per="event",x0=No
                 plot_df = pd.concat([plot_df, new_df])
         
         overwrite = False
-        if all_layer_names == [5] and (control_condition_list == ["init"] or control_condition_list == ["shuffled"]) and repetitions[0][0][0]['num_hidden'] == 16:
-            accuracy_path, fig_file_name = save_stats([], {'results_section': to_assess + 'PerLayer','depths':amount_layers, 'numHidden':16,'conditions': condition,'negative': c.NEGATIVE,'x0':x0,'y0':y0,'scale':'width','threshold':threshold},overwrite=overwrite)
-        else:
-            accuracy_path, fig_file_name = save_stats([], {'results_section': to_assess + 'PerLayer','depths':amount_layers, 'conditions': condition,'negative': c.NEGATIVE,'x0':x0,'y0':y0,'scale':'width','threshold':threshold},overwrite=overwrite)
-
+        accuracy_path, fig_file_name = save_stats([], {'results_section': to_assess + 'PerLayer','depths':amount_layers, 'numHidden':repetitions[0][0][0]['num_hidden'],'conditions': condition,'negative': c.NEGATIVE,'x0':x0,'y0':y0,'scale':'width','threshold':threshold},overwrite=overwrite)
         stats_to_save['median_info'][network_id] = plot_violins(plot_df, stats,hue="model",hue_order = [0,1,2,3,4], y_x_ratio = 5/amount_layers,save_path=os.path.join(accuracy_path, fig_file_name))
         
         df_plots[to_assess][condition_key][model] = plot_df
-
-    
     
       
     pickle_info = {'total_df': total_df, 'stats': stats_to_save, 'df_plots': df_plots}
@@ -578,11 +558,8 @@ def stats_fits_between_layers(results_dir,repetitions,assessed_per="event",x0=No
     
     overwrite = False
     matplotlib.rcParams['pdf.fonttype'] = 42
-    if all_layer_names == [5] and (control_condition_list == ["init"] or control_condition_list == ["shuffled"]) and repetitions[0][0][0]['num_hidden'] == 16:
-        save_stats(pickle_info, {'results_section':to_assess + 'PerLayer','depths':all_layer_names, 'numHidden':16,'conditions': control_condition_list,'negative': c.NEGATIVE,'x0':x0,'y0':y0,'threshold':threshold},overwrite=overwrite)
-    else:
-        save_stats(pickle_info, {'results_section':to_assess + 'PerLayer','depths':all_layer_names, 'conditions': control_condition_list,'negative': c.NEGATIVE,'x0':x0,'y0':y0,'threshold':threshold},overwrite=overwrite)
-
+    save_stats(pickle_info, {'results_section':to_assess + 'PerLayer','depths':all_layer_names, 'numHidden':repetitions[0][0][0]['num_hidden'],'conditions': control_condition_list,'negative': c.NEGATIVE,'x0':x0,'y0':y0,'threshold':threshold},overwrite=overwrite)
+    
     return pickle_info
 
 def do_mono_tuned_fit_evaluations(results_dir,repetitions_all_depths,assessed_per="event",x0=["duration","ISI"],y0=["period","period"],control_condition_list=[], threshold = 0.2):
