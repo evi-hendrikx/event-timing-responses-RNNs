@@ -1,13 +1,18 @@
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import os
 import matplotlib
 from matplotlib.collections import PolyCollection
-from scipy.stats import kruskal,mannwhitneyu,skew, kurtosis
+from scipy.stats import kruskal,mannwhitneyu,skew, kurtosis, levene
 from scikit_posthocs import posthoc_dunn
 import seaborn as sns
 import statsmodels
+import numpy as np
+
+# Add missing np.NaN for compatibility with pycircstat
+if not hasattr(np, "NaN"):
+    np.NaN = np.nan
+
 import pycircstat as circstat
 import diptest
 
@@ -43,6 +48,7 @@ def data_stats(data, first_vs_last = True,variable='distances',parameters_type=[
                 for node in data[network_depth][key]:
                     plot_info.append((node,key,network_depth))
 
+        # networks with only one layer cannot be compared over layers
         if network_depth == 1:
             continue
         
@@ -66,7 +72,7 @@ def data_stats(data, first_vs_last = True,variable='distances',parameters_type=[
         if variable != "fit_theta":
          
             eval_string = eval_string.replace("kruskal(","posthoc_dunn([").replace(")","],p_adjust='holm-sidak')")
-            stats['between_layers'][network_depth]["post_hoc"]['vals'],stats['between_layers'][network_depth]["post_hoc"]['print'] = eval(eval_string)
+            stats['between_layers'][network_depth]["post_hoc"]['vals'] = eval(eval_string)
     
             stats['between_layers'][network_depth]['variances'] = {}
             
@@ -182,9 +188,7 @@ def data_stats(data, first_vs_last = True,variable='distances',parameters_type=[
         inf_or_0_or_normal.loc[np.logical_and(inf_or_0_or_normal[variable] != -np.inf,inf_or_0_or_normal[variable] != np.inf),'group'] = 'normal'
                        
        
-        max_value = inf_or_0_or_normal.loc[inf_or_0_or_normal[variable] != np.inf, variable].max()
         inf_or_0_or_normal.loc[inf_or_0_or_normal[variable] == np.inf, variable] = 20
-        min_value = inf_or_0_or_normal.loc[inf_or_0_or_normal[variable] != -np.inf, variable].min()
         inf_or_0_or_normal.loc[inf_or_0_or_normal[variable] == -np.inf, variable] = -20
       
         for group in ["Inf","normal","Zero"]:
@@ -389,26 +393,26 @@ def compare_maps_tuned_predictions(results_dir,all_repetitions,assessed_per="eve
                         
                         if not row['depth'] in num_per_violin.keys():
                             num_per_violin[row['depth']] = {}
-                            if response_type == "tuned":
+                            if "tuned" in parameters_type:
                                 fit_sigmaMinor[row['depth']],fit_sigmaMajor[row['depth']] = {},{}
                                 fit_ratio[row['depth']],fit_theta[row['depth']] = {},{}
                                 fit_x0[row['depth']] = {}
                                 fit_y0[row['depth']] = {}
                                 fit_exp[row['depth']] = {}
-                            elif response_type == "mono":
+                            if "mono" in parameters_type:
                                 fit_expDur[row['depth']] = {}
                                 fit_expPer[row['depth']] = {}
                                 fit_betaRatio[row['depth']] = {}
                         if not row['layer'] in num_per_violin[row['depth']].keys():
                             num_per_violin[row['depth']][row['layer']] = 0
-                            if response_type == "tuned":
+                            if "tuned" in parameters_type:
 
                                 fit_sigmaMinor[row['depth']][row['layer']],fit_sigmaMajor[row['depth']][row['layer']] = [],[]
                                 fit_ratio[row['depth']][row['layer']],fit_theta[row['depth']][row['layer']] = [],[]
                                 fit_x0[row['depth']][row['layer']] = []
                                 fit_y0[row['depth']][row['layer']] = []
                                 fit_exp[row['depth']][row['layer']] = []
-                            elif response_type == "mono":
+                            if "mono" in parameters_type:
                                 fit_expDur[row['depth']][row['layer']] = []
                                 fit_expPer[row['depth']][row['layer']] = []
                                 fit_betaRatio[row['depth']][row['layer']] = []
@@ -481,7 +485,7 @@ def compare_maps_tuned_predictions(results_dir,all_repetitions,assessed_per="eve
                             # period component contant --> betas can become anything. Ratio is only about duration
                             elif expPer == 1:
                                 fit_betaRatio[row['depth']][row['layer']].append(np.inf)
-                            # duration component contant --> betas can become anything. Ratio is only about perod
+                            # duration component contant --> betas can become anything. Ratio is only about period
                             elif expDur == 0:
                                 fit_betaRatio[row['depth']][row['layer']].append(0)
                                 
