@@ -565,7 +565,25 @@ def plot_loss_functions_all_depths(results_dir, all_repetitions, control_conditi
             print(stats["Wilcoxon"]["shuffled"])
         except:
             print('no shuffled')
-    
+        
+        # compare 5 layer network with fully connected network
+        try:
+            id_fc = np.where(np.array(control_condition_list) == "fully_connected")[0][0]
+            stats["MannWU"]["fully_connected"] = mannwhitneyu(regular_loss,[all_losses[id_fc][rep][-1] for rep in range(len(all_losses[id_fc]))])
+            stats["shapiro"]["fully_connected"] = shapiro([all_losses[id_fc][rep][-1] for rep in range(len(all_losses[id_fc]))])
+            print(stats["MannWU"]["fully_connected"])
+        except:
+            print('no fully_connected')
+            
+        # compare 5 layer network with 64 nodes network
+        try:
+            id_64 = np.where(np.array(control_condition_list) == "64nodes")[0][0]
+            stats["MannWU"]["64nodes"] = mannwhitneyu(regular_loss,[all_losses[id_64][rep][-1] for rep in range(len(all_losses[id_64]))])
+            stats["shapiro"]["64nodes"] = shapiro([all_losses[id_64][rep][-1] for rep in range(len(all_losses[id_64]))])
+            print(stats["MannWU"]["64nodes"])
+        except:
+            print('no 64 nodes')
+
      # save info
      matplotlib.rcParams['pdf.fonttype'] = 42
      pickle_info = [all_repetitions, all_losses,all_medians,all_IQRs, stats]
