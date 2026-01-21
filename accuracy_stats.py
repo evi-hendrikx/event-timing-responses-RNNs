@@ -261,28 +261,58 @@ def compare_accuracy_model_depths(results_dir, all_repetitions, condition_list =
             stats[accuracy_type]["Wilcoxon"] = {}
             stats[accuracy_type]['shapiro'] = {}
 
-            acc_regular = accuracies["5 layers"]
-            stats[accuracy_type]["shapiro"]["regular"] = shapiro(acc_regular)
+            try:
+                acc_regular = accuracies["5 layers"]
+                stats[accuracy_type]["shapiro"]["regular"] = shapiro(acc_regular)
+            except:
+                continue
            
             # compare 5 layer network with not recurrent
-            stats[accuracy_type]["MannWU"]["NN"] = mannwhitneyu(acc_regular,accuracies["no_recurrency"])
-            stats[accuracy_type]["shapiro"]["NN"] = shapiro(accuracies["no_recurrency"])
-            print('NN:',stats[accuracy_type]["MannWU"]["NN"])
+            try:
+                stats[accuracy_type]["MannWU"]["NN"] = mannwhitneyu(acc_regular,accuracies["no_recurrency"])
+                stats[accuracy_type]["shapiro"]["NN"] = shapiro(accuracies["no_recurrency"])
+                print('NN:',stats[accuracy_type]["MannWU"]["NN"])
+            except:
+                print("no no_recurrency")
     
             # compare 5 layer network with 16 nodes per layer
-            stats[accuracy_type]["MannWU"]["16nodes"] = mannwhitneyu(acc_regular,accuracies["16nodes"])
-            stats[accuracy_type]["shapiro"]["16nodes"] = shapiro(accuracies["16nodes"])
-            print('16:',stats[accuracy_type]["MannWU"]["16nodes"])
+            try:
+                stats[accuracy_type]["MannWU"]["16nodes"] = mannwhitneyu(acc_regular,accuracies["16nodes"])
+                stats[accuracy_type]["shapiro"]["16nodes"] = shapiro(accuracies["16nodes"])
+                print('16:',stats[accuracy_type]["MannWU"]["16nodes"])
+            except:
+                print("no 16 nodes")
             
             # compare 5 layer network with network trained on shuffled data
-            stats[accuracy_type]["Wilcoxon"]["shuffled"] = wilcoxon(acc_regular,accuracies["shuffled"])
-            stats[accuracy_type]["shapiro"]["shuffled_diff"] = shapiro(np.array(acc_regular) - np.array(accuracies["shuffled"]))
-            print('shuffled:',stats[accuracy_type]["Wilcoxon"]["shuffled"])
+            try:
+                stats[accuracy_type]["Wilcoxon"]["shuffled"] = wilcoxon(acc_regular,accuracies["shuffled"])
+                stats[accuracy_type]["shapiro"]["shuffled_diff"] = shapiro(np.array(acc_regular) - np.array(accuracies["shuffled"]))
+                print('shuffled:',stats[accuracy_type]["Wilcoxon"]["shuffled"])
+            except:
+                print("no shuffled")
+
+            try:
+                stats[accuracy_type]["MannWU"]["fully_connected"] = mannwhitneyu(acc_regular,accuracies["fully_connected"])
+                stats[accuracy_type]["shapiro"]["fully_connected"] = shapiro(accuracies["fully_connected"])
+                print("Shapiro:", stats[accuracy_type]["shapiro"]["fully_connected"])
+                print('fully connected:',stats[accuracy_type]["MannWU"]["fully_connected"])
+            except:
+                print("no fully_connected")
             
-            # compare 5 layer network with network trained on shuffled data
-            stats[accuracy_type]["Wilcoxon"]["init"] = wilcoxon(acc_regular,accuracies["init"])
-            stats[accuracy_type]["shapiro"]["init_diff"] = shapiro(np.array(acc_regular) - np.array(accuracies["init"]))
-            print('init:',stats[accuracy_type]["Wilcoxon"]["shuffled"])
+            try:
+                stats[accuracy_type]["Wilcoxon"]["init"] = wilcoxon(acc_regular,accuracies["init"])
+                stats[accuracy_type]["shapiro"]["init_diff"] = shapiro(np.array(acc_regular) - np.array(accuracies["init"]))
+                print('init:',stats[accuracy_type]["Wilcoxon"]["init"]) # TODO RECHECK REPORTED STATS, THERE WAS A BUG HERE
+            except:
+                print("no init")
+            
+            try:
+                stats[accuracy_type]["MannWU"]["64nodes"] = mannwhitneyu(acc_regular,accuracies["64nodes"])
+                stats[accuracy_type]["shapiro"]["64nodes"] = shapiro(accuracies["64nodes"])
+                print("Shapiro:", stats[accuracy_type]["shapiro"]["64nodes"])
+                print('64 nodes:',stats[accuracy_type]["MannWU"]["64nodes"])
+            except:
+                print("no 64 nodes")
      
 
     # plot including scatter points of data
@@ -298,11 +328,15 @@ def compare_accuracy_model_depths(results_dir, all_repetitions, condition_list =
         p.set_color('white')  # Sets the color of the quartile lines
         p.set_alpha(1)            
  
+    x_values_summary_stats = []
     for i, v in enumerate(violin.findobj(PolyCollection)):
-       if i < len(event_accuracies_per_depth):
+        if i < len(event_accuracies_per_depth):
            v.set_facecolor('0.8')
-       else:
+        else:
            v.set_facecolor('0')
+        verts = v.get_paths()[0].vertices  # get polygon vertices
+        x_mean = verts[:, 0].mean()  # average x of the polygon
+        x_values_summary_stats.append(x_mean)
            
            
     grouped_df = plot_df.groupby(['accuracy type', 'condition'],sort=False)
@@ -313,28 +347,10 @@ def compare_accuracy_model_depths(results_dir, all_repetitions, condition_list =
     Q75 = grouped_df['accuracy'].quantile(.75).to_list()
     stats['median_info'] = [str(round(median[idx],2)) + ' [' + str(round(Q25[idx],2)) + ', ' + str(round(Q75[idx],2)) +']' for idx in range(len(median))]
     print(stats['median_info'])
-    x_values_summary_stats = [np.where(np.asarray(["event", "state change"]) == plotted_acc)[0][0] for plotted_acc in grouped_df.mean().index.get_level_values(0)]
-   
-    if len(event_accuracies_per_depth) == 5:
-        x_values_violins = [-0.32, -0.16, 0, 0.16, 0.32]
-    elif len(event_accuracies_per_depth) == 4:
-        x_values_violins = [-0.3, -0.1, 0.1, 0.3]
-    elif len(event_accuracies_per_depth) == 1:
-        x_values_violins = [0]
-
-    previous_x_value = x_values_summary_stats[0]
-    layer_id = 0
-    for x_id, x_value in enumerate(x_values_summary_stats):
-        if x_value != previous_x_value:
-            layer_id = 0
-        previous_x_value = x_value
-        x_values_summary_stats[x_id] = x_value + x_values_violins[layer_id]
-        layer_id += 1
     
     plt.errorbar(x_values_summary_stats,median,fmt='.',color='white',capsize=0) 
     plt.errorbar(x_values_summary_stats,mean,fmt='.',color='red',capsize=0) 
 
-    
     plt.ylim(0,1)
     
     ax = plt.gca()
@@ -345,8 +361,8 @@ def compare_accuracy_model_depths(results_dir, all_repetitions, condition_list =
     
     pickle_info = {'repetitions':repetitions_per_layer, 'event_accuracies_per_depth_sorted':event_accuracies_per_depth_sorted, 'event_repetitions_best_accuracies':event_repetitions_best_accuracies, 'state_change_accuracies_per_depth_sorted':state_change_accuracies_per_depth_sorted, 'state_change_repetitions_best_accuracies':state_change_repetitions_best_accuracies, 'stats':stats}
     overwrite = False
-    save_stats(pickle_info, {'results_section':'accuracy_NEW16nodesTRY','top':top,'depths':collect_depths, 'conditions': condition_list,'incl':'Levene'},overwrite=overwrite)
-    accuracy_path, fig_file_name = save_stats([], {'results_section':'accuracy_NEW16nodesTRY','top':top,'depths':collect_depths, 'conditions': condition_list,"scale":"width"},overwrite=overwrite)
+    save_stats(pickle_info, {'results_section':'accuracy','top':top,'depths':collect_depths, 'conditions': condition_list,'incl':'Levene'},overwrite=overwrite)
+    accuracy_path, fig_file_name = save_stats([], {'results_section':'accuracy','top':top,'depths':collect_depths, 'conditions': condition_list,"scale":"width"},overwrite=overwrite)
     if os.path.exists(os.path.join(accuracy_path, fig_file_name)) and overwrite == False:
         print('file ', fig_file_name, ' already exists. Not overwriting')
     else:    
@@ -382,10 +398,10 @@ def compare_variance_accuracy_maps(results_dir, all_repetitions, assessed_per="e
             control_condition = None
         
         repetitions = []
-        event_accuracies = [];
-        event_values = [];
-        sc_values = [];
-        variance_heatmap = [];
+        event_accuracies = []
+        event_values = []
+        sc_values = []
+        variance_heatmap = []
         
         for repetition in repetitions_per_layer:
             if len(repetition) == 1:
