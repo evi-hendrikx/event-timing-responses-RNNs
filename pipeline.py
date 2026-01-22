@@ -20,9 +20,6 @@ from create_special_conditions import evaluate_special_conditions
 from network_models_new import RNNetwork, NNetwork
 
 
-
-
-
 def train_net(net, dataloader, optimizer, scheduler, loss_fn, num_epochs, net_path, early_stopping=False, prev_losses=None, clip_weights=False):
     """
     Trains given network for given hyper parameters
