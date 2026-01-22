@@ -60,7 +60,10 @@ def to_numpy(tensor):
     :param tensor: tensor of any shape
     :return: np array on cpu
     """
-    return tensor.detach().cpu().numpy()
+    if isinstance(tensor, torch.Tensor):
+        return tensor.detach().cpu().numpy()
+    else:
+        return tensor
 
 
 def transform_movie(movie):
@@ -216,8 +219,13 @@ def save_stats(pickle_info, name_info, overwrite=False):
         os.mkdir(save_dir)
 
     pickle_save_name = 'pkl_info'
-    keys_and_values = list(sum(list(name_info.items()), ()))
-    for item in keys_and_values[2:]:
+    keys_and_values = [
+        item
+        for k, v in name_info.items()
+        if k != "results_section"
+        for item in (k, v)
+    ]
+    for item in keys_and_values:
         if type(item) is list:
             for i in item:
                 pickle_save_name = pickle_save_name + '_' + str(i)
@@ -404,7 +412,7 @@ def get_raw_responses(net, test_movie, mode=0):
     
 
 
-def get_avg_res(batch_response, batch_labels, batch_events, batch_losses, batch_movies, batch_targets, batch_predictions, assessed_per="event", per_location=False):
+def get_avg_res(batch_response, batch_labels, batch_events, batch_losses, batch_movies, batch_targets, batch_predictions=None, assessed_per="event", per_location=False,return_mask=False):
     """
     Returns average event response and loss for a batch. Not complete event will be excluded and result in both.
     :param batch_response: raw activation
@@ -417,9 +425,11 @@ def get_avg_res(batch_response, batch_labels, batch_events, batch_losses, batch_
     avg_responses = []
     acc_props = []
 
-    batch_predictions_bw = (batch_predictions > 0.5).astype(int)
-    batch_predictions_bw = batch_predictions_bw.squeeze(axis=3)
-    accuracy = (batch_predictions_bw == batch_targets).astype(int).squeeze()
+    if return_mask==False:
+        assert batch_predictions is not None
+        batch_predictions_bw = (batch_predictions > 0.5).astype(int)
+        batch_predictions_bw = batch_predictions_bw.squeeze(axis=3)
+        accuracy = (batch_predictions_bw == batch_targets).astype(int).squeeze()
 
     if assessed_per == "event" or assessed_per == "state_change":
 
@@ -491,6 +501,8 @@ def get_avg_res(batch_response, batch_labels, batch_events, batch_losses, batch_
 
             if assessed_per == "event":
                 mask[idx][first_frame_prediction_whole_event[idx]:last_frame_prediction_whole_event[idx]] = 1
+                if return_mask == True:
+                    continue
 
                 elem_activation = batch_response[:, :, idx, mask[idx], :]
                 # average over relevant whole events
@@ -506,8 +518,9 @@ def get_avg_res(batch_response, batch_labels, batch_events, batch_losses, batch_
                 acc_props.append(avg_acc_prop)
 
             elif assessed_per == "state_change":
-
                 mask[idx][state_changes_locations[idx]] = 1
+                if return_mask == True:
+                    continue
                 elem_activation = batch_response[:, :, idx, mask[idx], :]
 
                 # average over relevant images
@@ -532,6 +545,9 @@ def get_avg_res(batch_response, batch_labels, batch_events, batch_losses, batch_
                     np.mean(batch_response[:, :, idx, ...], axis=2))
         except:
             pass
+    
+    if return_mask == True:
+        return mask
 
     avg_responses = np.array(avg_responses)
     avg_losses = np.array(avg_losses)
